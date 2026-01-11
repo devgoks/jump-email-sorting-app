@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { syncUserInboxes } from "@/lib/sync";
+import { syncAllUsersInboxes } from "@/lib/sync-all-users";
+
+export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const auth = request.headers.get("authorization") ?? "";
@@ -9,16 +10,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const users = await prisma.user.findMany({
-    where: { gmailAccounts: { some: {} } },
-    select: { id: true },
-  });
-
-  const results = [];
-  for (const u of users) {
-    const r = await syncUserInboxes(u.id, { maxPerInbox: 10 });
-    results.push({ userId: u.id, inboxes: r });
-  }
+  const results = await syncAllUsersInboxes({ maxPerInbox: 10 });
 
   return NextResponse.json({ ok: true, results });
 }

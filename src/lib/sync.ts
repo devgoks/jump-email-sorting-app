@@ -38,7 +38,6 @@ export async function syncUserInboxes(userId: string, opts?: { maxPerInbox?: num
 
   for (const acct of gmailAccounts) {
     const gmail = getGmailClient(acct.refreshToken);
-    console.log("acct.createdAt", acct.createdAt);
     const joinedAtMs = BigInt(acct.createdAt.getTime());
     const ids = await listInboxMessageIds(gmail, {
       maxResults: maxPerInbox,
@@ -48,7 +47,6 @@ export async function syncUserInboxes(userId: string, opts?: { maxPerInbox?: num
     let imported = 0;
     let skipped = 0;
 
-    //console.log("ids", ids.length);
 
     for (const gmailMessageId of ids) {
       const already = await prisma.emailMessage.findUnique({
@@ -65,10 +63,6 @@ export async function syncUserInboxes(userId: string, opts?: { maxPerInbox?: num
       const fetched = await fetchFullMessage(gmail, gmailMessageId);
       // To ensure we import and archive only NEW emails after the user connected their Gmail account to the app.
       if (fetched.internalDateMs && fetched.internalDateMs < joinedAtMs) {
-        console.log("skipped pre-join email", fetched.subject);
-        console.log("joinedAtMs", joinedAtMs);
-        console.log("fetched.internalDateMs", fetched.internalDateMs);
-        
         skipped += 1;
         continue;
       }

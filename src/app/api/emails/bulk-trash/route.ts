@@ -29,16 +29,15 @@ export async function POST(request: Request) {
       const gmail = getGmailClient(e.gmailAccount.refreshToken);
       await trashMessage(gmail, e.gmailMessageId);
 
-      await prisma.emailMessage.update({
-        where: { id: e.id },
-        data: { importStatus: "TRASHED" },
-      });
       await prisma.emailAction.create({
         data: {
           emailMessageId: e.id,
           type: "TRASH",
           status: "SUCCEEDED",
         },
+      });
+      await prisma.emailMessage.delete({
+        where: { id: e.id },
       });
 
       results.push({ id: e.id, ok: true });
