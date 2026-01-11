@@ -34,6 +34,7 @@ export default async function CategoryDetailPage({
     createdAtIso: e.createdAt.toISOString(),
     summary: e.summary,
     snippet: e.snippet,
+    importStatus: e.importStatus,
   }));
 
   return (
@@ -43,9 +44,9 @@ export default async function CategoryDetailPage({
           <div>
             <Link
               href="/dashboard"
-              className="text-sm font-medium text-zinc-600 hover:text-zinc-900"
+              className="inline-flex items-center gap-1 text-base font-semibold text-zinc-700 hover:text-zinc-950"
             >
-              ← Dashboard
+              ← Back To Dashboard
             </Link>
             <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900">
               {category.name}

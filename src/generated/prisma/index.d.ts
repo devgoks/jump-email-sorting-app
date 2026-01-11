@@ -61,7 +61,8 @@ export namespace $Enums {
   export const EmailImportStatus: {
   IMPORTED: 'IMPORTED',
   ARCHIVED: 'ARCHIVED',
-  TRASHED: 'TRASHED'
+  TRASHED: 'TRASHED',
+  UNSUBSCRIBED: 'UNSUBSCRIBED'
 };
 
 export type EmailImportStatus = (typeof EmailImportStatus)[keyof typeof EmailImportStatus]

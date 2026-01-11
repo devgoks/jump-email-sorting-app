@@ -240,7 +240,8 @@ exports.Prisma.QueryMode = {
 exports.EmailImportStatus = exports.$Enums.EmailImportStatus = {
   IMPORTED: 'IMPORTED',
   ARCHIVED: 'ARCHIVED',
-  TRASHED: 'TRASHED'
+  TRASHED: 'TRASHED',
+  UNSUBSCRIBED: 'UNSUBSCRIBED'
 };
 
 exports.EmailActionType = exports.$Enums.EmailActionType = {

@@ -22,6 +22,17 @@ export default async function EmailDetailPage({
 
   if (!email) notFound();
 
+  const statusLabel =
+    email.importStatus === "IMPORTED"
+      ? "Imported"
+      : email.importStatus === "ARCHIVED"
+        ? "Archived"
+        : email.importStatus === "TRASHED"
+          ? "Trashed"
+          : email.importStatus === "UNSUBSCRIBED"
+            ? "Unsubscribed"
+          : email.importStatus;
+
   return (
     <div className="min-h-screen bg-zinc-50">
       <div className="mx-auto max-w-5xl px-6 py-10">
@@ -38,7 +49,7 @@ export default async function EmailDetailPage({
             </h1>
             <p className="mt-1 text-sm text-zinc-600">
               From: {email.fromEmail ?? "unknown"} · Inbox:{" "}
-              {email.gmailAccount.email}
+              {email.gmailAccount.email} · Status: {statusLabel}
             </p>
           </div>
         </header>

@@ -15,6 +15,7 @@ enum EmailImportStatus {
   IMPORTED
   ARCHIVED
   TRASHED
+  UNSUBSCRIBED
 }
 
 enum EmailActionType {

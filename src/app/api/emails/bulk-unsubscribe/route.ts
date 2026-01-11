@@ -60,6 +60,12 @@ export async function POST(request: Request) {
             details: { method: "http", url: http, status: attempt.status },
           },
         });
+        if (attempt.ok) {
+          await prisma.emailMessage.update({
+            where: { id: e.id },
+            data: { importStatus: "UNSUBSCRIBED" },
+          });
+        }
         results.push({
           id: e.id,
           ok: attempt.ok,

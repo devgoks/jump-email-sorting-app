@@ -62,7 +62,7 @@ export default async function DashboardPage() {
             </p>
           </div>
           <Link
-            className="rounded-md border border-zinc-200 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50"
+            className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50 hover:text-zinc-950"
             href="/api/auth/signout?callbackUrl=/"
           >
             Sign out
@@ -71,7 +71,7 @@ export default async function DashboardPage() {
 
         <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
           <section className="rounded-2xl border border-zinc-200 bg-white p-6">
-            <h2 className="text-sm font-semibold text-zinc-900">
+            <h2 className="text-base font-semibold text-zinc-950">
               Connected Gmail inboxes
             </h2>
             <p className="mt-1 text-xs text-zinc-600">
@@ -103,13 +103,13 @@ export default async function DashboardPage() {
             <div className="mt-4">
               <Link
                 href="/api/gmail/connect"
-                className="inline-flex w-full items-center justify-center rounded-md border border-zinc-200 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50"
+                className="inline-flex w-full items-center justify-center rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50 hover:text-zinc-950"
               >
                 Connect another Gmail inbox
               </Link>
             </div>
 
-            <form action={syncNow} className="mt-4">
+            {/* <form action={syncNow} className="mt-4">
               <button className="w-full rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
                 Sync now (import + archive)
               </button>
@@ -117,13 +117,13 @@ export default async function DashboardPage() {
                 This imports up to 10 inbox emails per connected account, uses
                 AI to classify + summarize, then archives in Gmail.
               </p>
-            </form>
+            </form> */}
           </section>
 
           <section className="rounded-2xl border border-zinc-200 bg-white p-6 lg:col-span-2">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-sm font-semibold text-zinc-900">
+                <h2 className="text-base font-semibold text-zinc-950">
                   Categories
                 </h2>
                 <p className="mt-1 text-xs text-zinc-600">
@@ -156,20 +156,20 @@ export default async function DashboardPage() {
             </div>
 
             <div className="mt-8 border-t border-zinc-200 pt-6">
-              <h3 className="text-sm font-semibold text-zinc-900">
+              <h3 className="text-base font-semibold text-zinc-950">
                 Add a new category
               </h3>
               <form action={createCategory} className="mt-3 grid gap-3">
                 <input
                   name="name"
                   placeholder="Category name (e.g. Bills, Work, Promotions)"
-                  className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-500"
                   required
                 />
                 <textarea
                   name="description"
                   placeholder="Description used by AI to classify emails into this category..."
-                  className="min-h-[96px] w-full rounded-md border border-zinc-200 px-3 py-2 text-sm"
+                  className="min-h-[96px] w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-500"
                   required
                 />
                 <div>

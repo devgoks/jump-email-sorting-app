@@ -10,6 +10,7 @@ export type CategoryEmailListItem = {
   createdAtIso: string;
   summary: string | null;
   snippet: string | null;
+  importStatus: "IMPORTED" | "ARCHIVED" | "TRASHED" | "UNSUBSCRIBED";
 };
 
 export function CategoryEmailList({
@@ -75,13 +76,28 @@ export function CategoryEmailList({
     });
   }
 
+  function statusLabel(s: CategoryEmailListItem["importStatus"]) {
+    switch (s) {
+      case "IMPORTED":
+        return "Imported";
+      case "ARCHIVED":
+        return "Archived";
+      case "TRASHED":
+        return "Trashed";
+      case "UNSUBSCRIBED":
+        return "Unsubscribed";
+      default:
+        return s;
+    }
+  }
+
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <button
             type="button"
-            className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium hover:bg-zinc-50 disabled:opacity-50"
+            className="rounded-md border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-900 shadow-sm hover:bg-white hover:border-zinc-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900/20 disabled:opacity-50"
             onClick={toggleAll}
             disabled={items.length === 0 || isPending}
           >
@@ -94,7 +110,7 @@ export function CategoryEmailList({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium hover:bg-zinc-50 disabled:opacity-50"
+            className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 shadow-sm hover:bg-zinc-50 hover:border-zinc-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900/20 disabled:opacity-50"
             disabled={selectedIds.length === 0 || isPending}
             onClick={bulkUnsubscribe}
           >
@@ -142,6 +158,10 @@ export function CategoryEmailList({
                     <span>{e.fromEmail ?? "unknown sender"}</span>
                     <span className="text-zinc-400">·</span>
                     <span>{e.createdAtIso}</span>
+                    <span className="text-zinc-400">·</span>
+                    <span className="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[11px] font-medium text-zinc-700">
+                      {statusLabel(e.importStatus)}
+                    </span>
                   </div>
                   <div className="mt-2 line-clamp-3 text-sm leading-6 text-zinc-700">
                     {e.summary ?? e.snippet ?? ""}
