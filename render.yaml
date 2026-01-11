@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: jump-email-sorting-app
+    env: node
+    plan: starter
+    rootDir: jump-email-sorting-app
+    buildCommand: npm ci && npm run build
+    startCommand: npx prisma migrate deploy && node node_modules/next/dist/bin/next start -p $PORT
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        value: file:/var/data/app.db
+      # IMPORTANT: Set these in the Render dashboard (Secrets):
+      # - NEXTAUTH_SECRET
+      # - GOOGLE_CLIENT_ID
+      # - GOOGLE_CLIENT_SECRET
+      # - NEXTAUTH_URL (e.g. https://YOUR-SERVICE.onrender.com)
+      # - OPENAI_API_KEY
+      # - CRON_SECRET
+
+
