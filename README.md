@@ -46,11 +46,6 @@ In Google Cloud Console:
   - For NextAuth sign-in: `https://YOUR_HOST/api/auth/callback/google`
   - For “Connect another inbox”: `https://YOUR_HOST/api/gmail/callback`
 
-## Syncing emails (import + archive)
-
-- In the UI: click **“Sync now (import + archive)”**
-- For production: call the cron endpoint periodically:
-  - `POST /api/cron/sync` with header `Authorization: Bearer $CRON_SECRET`
 
 ## Deployment (Render)
 
