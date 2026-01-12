@@ -18,6 +18,7 @@ export type AiEmail = {
 const AiResultSchema = z.object({
   categoryName: z.string().min(1),
   summary: z.string().min(1),
+  unsubscribeUrls: z.array(z.string().min(1)).optional(),
 });
 
 export async function classifyAndSummarizeEmail(input: {
@@ -47,7 +48,7 @@ export async function classifyAndSummarizeEmail(input: {
       {
         role: "system",
         content:
-          "You classify emails into user-defined categories and write concise summaries. Respond with ONLY valid JSON.",
+          "You classify emails into user-defined categories, write concise summaries, and extract unsubscribe URLs when present. Respond with ONLY valid JSON.",
       },
       {
         role: "user",
@@ -58,10 +59,13 @@ export async function classifyAndSummarizeEmail(input: {
           "Email:",
           emailText || "(no email content provided)",
           "",
-          'Return JSON: {"categoryName": "...", "summary": "..."}',
+          'Return JSON: {"categoryName": "...", "summary": "...", "unsubscribeUrls": ["https://..."]}',
           "Rules:",
           "- categoryName MUST exactly match one of the provided category names when possible.",
           "- summary should be 2-5 sentences, capturing action items and key details.",
+          "- If the email contains an unsubscribe link in the body, include it in unsubscribeUrls.",
+          "- unsubscribeUrls should include only URLs (http/https) that look like unsubscribe/preferences opt-out endpoints.",
+          "- If none found, omit unsubscribeUrls or use an empty array.",
         ].join("\n"),
       },
     ],
@@ -73,6 +77,7 @@ export async function classifyAndSummarizeEmail(input: {
     return {
       categoryId: input.categories[0]?.id,
       summary: input.email.snippet || "(No summary available.)",
+      unsubscribeUrls: [],
       raw: content,
     };
   }
@@ -83,8 +88,18 @@ export async function classifyAndSummarizeEmail(input: {
   return {
     categoryId: match?.id ?? input.categories[0]?.id,
     summary: parsed.data.summary.trim(),
+    unsubscribeUrls: (parsed.data.unsubscribeUrls ?? []).filter(isSafeHttpUrl).slice(0, 10),
     raw: content,
   };
+}
+
+function isSafeHttpUrl(raw: string) {
+  try {
+    const u = new URL(raw);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function safeJsonParse(text: string) {

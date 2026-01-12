@@ -90,6 +90,8 @@ export async function syncUserInboxes(userId: string, opts?: { maxPerInbox?: num
         bodyText: fetched.bodyText,
         bodyHtml: fetched.bodyHtml,
       });
+      const aiUrls = Array.isArray((ai as any).unsubscribeUrls) ? ((ai as any).unsubscribeUrls as string[]) : [];
+      const mergedGuessed = [...new Set([...(extractedUnsubscribeLinks.guessedLinks ?? []), ...aiUrls])];
 
       await prisma.emailMessage.create({
         data: {
@@ -109,6 +111,7 @@ export async function syncUserInboxes(userId: string, opts?: { maxPerInbox?: num
           listUnsubscribe: fetched.listUnsubscribe,
           unsubscribeLinks: {
             ...extractedUnsubscribeLinks,
+            guessedLinks: mergedGuessed,
             listUnsubscribePost: fetched.listUnsubscribePost ?? null,
           },
         },
