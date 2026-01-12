@@ -1,0 +1,33 @@
+# fly.toml app configuration file generated for jump-email-sorting-app on 2026-01-12T12:57:03+01:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'jump-email-sorting-app'
+primary_region = 'iad'
+
+[build]
+  dockerfile = 'Dockerfile'
+
+[env]
+  DATABASE_URL = 'file:/data/app.db'
+  NEXT_TELEMETRY_DISABLED = '1'
+  NODE_ENV = 'production'
+
+[[mounts]]
+  source = 'data'
+  destination = '/data'
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  # If you rely on INTERNAL_SYNC_CRON_ENABLED=true, do NOT scale to zero.
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[vm]]
+  memory = '2gb'
+  cpu_kind = 'shared'
+  cpus = 2
+  memory_mb = 2048

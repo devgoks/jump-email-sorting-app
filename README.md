@@ -76,6 +76,61 @@ curl -fsSL -X POST "https://YOUR-SERVICE.onrender.com/api/cron/sync" \
   -H "Authorization: Bearer $CRON_SECRET"
 ```
 
+## Deployment (Fly.io)
+
+This app uses **SQLite** (Prisma datasource `sqlite`). On Fly, you should attach a **Fly Volume** and point `DATABASE_URL` to a file under that mount.
+
+### 1) Install and login
+
+```bash
+brew install flyctl
+fly auth login
+```
+
+### 2) Create the app + volume
+
+Run from the app directory:
+
+```bash
+cd jump-email-sorting-app
+fly launch --no-deploy
+```
+
+Create a persistent volume for SQLite (matches `fly.toml` mount `source = "data"`):
+
+```bash
+fly volumes create data --size 1
+```
+
+### 3) Set required secrets
+
+```bash
+fly secrets set \
+  NEXTAUTH_URL="https://jump-email-sorting-app.fly.dev" \
+  NEXTAUTH_SECRET="replace-me" \
+  GOOGLE_CLIENT_ID="replace-me.apps.googleusercontent.com" \
+  GOOGLE_CLIENT_SECRET="replace-me" \
+  GOOGLE_OAUTH_REDIRECT_URL="https://jump-email-sorting-app.fly.dev/api/gmail/callback" \
+  OPENAI_API_KEY="replace-me" \
+  OPENAI_MODEL="gpt-4o-mini" \
+  CRON_SECRET="replace-me" \
+  INTERNAL_SYNC_CRON_ENABLED="false" \
+  INTERNAL_SYNC_CRON_INTERVAL_MS="5000" \
+  INTERNAL_SYNC_CRON_MAX_PER_INBOX="10"
+```
+
+### 4) Deploy
+
+```bash
+fly deploy
+```
+
+### Notes
+
+- `DATABASE_URL` is set in `fly.toml` to `file:/data/app.db` (SQLite on the mounted volume at `/data`).
+- The app runs `npx prisma migrate deploy` automatically on each deploy (see `fly.toml` `release_command`).
+- Cron: Fly doesn’t automatically schedule HTTP calls for you. Keep using an external scheduler (e.g. GitHub Actions, cron-job.org) to `POST /api/cron/sync` with `Authorization: Bearer $CRON_SECRET`, or enable the internal cron and keep at least one machine always running.
+
 ## Tests
 
 ```bash
