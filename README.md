@@ -64,13 +64,6 @@ You still need to set these env vars in Render:
 - `OPENAI_API_KEY`
 - `CRON_SECRET`
 
-Then create a Render Cron Job (in the dashboard) that runs something like:
-
-```bash
-curl -fsSL -X POST "https://YOUR-SERVICE.onrender.com/api/cron/sync" \
-  -H "Authorization: Bearer $CRON_SECRET"
-```
-
 ## Deployment (Fly.io)
 
 This app uses **SQLite** (Prisma datasource `sqlite`). On Fly, you should attach a **Fly Volume** and point `DATABASE_URL` to a file under that mount.
@@ -124,7 +117,6 @@ fly deploy
 
 - `DATABASE_URL` is set in `fly.toml` to `file:/data/app.db` (SQLite on the mounted volume at `/data`).
 - The app runs `npx prisma migrate deploy` automatically on each deploy (see `fly.toml` `release_command`).
-- Cron: Fly doesn’t automatically schedule HTTP calls for you. Keep using an external scheduler (e.g. GitHub Actions, cron-job.org) to `POST /api/cron/sync` with `Authorization: Bearer $CRON_SECRET`, or enable the internal cron and keep at least one machine always running.
 
 ## Tests
 
