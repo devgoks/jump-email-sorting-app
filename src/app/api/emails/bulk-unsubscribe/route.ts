@@ -3,23 +3,19 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { extractUnsubscribeLinks } from "@/lib/unsubscribe";
+import { attemptUnsubscribeWithAgent } from "@/lib/unsubscribe-agent";
+import {
+  attemptListUnsubscribeOneClick,
+  isListUnsubscribeOneClick,
+} from "@/lib/unsubscribe-oneclick";
 
-async function attemptOneClickUnsubscribe(url: string) {
-  const res = await fetch(url, {
-    method: "GET",
-    redirect: "follow",
-    headers: {
-      "user-agent":
-        "JumpEmailSorter/1.0 (best-effort unsubscribe; contact: admin@example.com)",
-    },
-  });
-  return { status: res.status, ok: res.status >= 200 && res.status < 400 };
-}
+export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id;
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const userEmail = session?.user?.email ?? null;
 
   const body = (await request.json().catch(() => null)) as null | {
     emailIds?: string[];
@@ -36,42 +32,107 @@ export async function POST(request: Request) {
   const results: Array<{
     id: string;
     ok: boolean;
-    method?: "http" | "mailto" | "none";
+    method?: "one_click_post" | "agent" | "mailto" | "none";
     url?: string;
+    steps?: Array<{ type: string; detail?: string }>;
     error?: string;
   }> = [];
 
   for (const e of emails) {
     try {
-      const links = extractUnsubscribeLinks({
-        listUnsubscribe: e.listUnsubscribe,
-        bodyText: e.bodyText,
-        bodyHtml: e.bodyHtml,
+      const stored = (e.unsubscribeLinks ?? null) as any;
+      const links =
+        stored && typeof stored === "object" && Array.isArray(stored.httpLinks)
+          ? {
+              httpLinks: Array.isArray(stored.httpLinks) ? stored.httpLinks : [],
+              guessedLinks: Array.isArray(stored.guessedLinks) ? stored.guessedLinks : [],
+              mailtoLinks: Array.isArray(stored.mailtoLinks) ? stored.mailtoLinks : [],
+              listUnsubscribePost:
+                typeof stored.listUnsubscribePost === "string" ? stored.listUnsubscribePost : null,
+            }
+          : {
+              ...extractUnsubscribeLinks({
+                listUnsubscribe: e.listUnsubscribe,
+                bodyText: e.bodyText,
+                bodyHtml: e.bodyHtml,
+              }),
+              listUnsubscribePost: null as string | null,
+            };
+
+      // Persist latest extraction so later attempts are faster/consistent.
+      await prisma.emailMessage.update({
+        where: { id: e.id },
+        data: {
+          unsubscribeLinks: {
+            httpLinks: links.httpLinks,
+            guessedLinks: links.guessedLinks,
+            mailtoLinks: links.mailtoLinks,
+            listUnsubscribePost: links.listUnsubscribePost,
+          },
+        },
       });
 
       const http = links.httpLinks[0] ?? links.guessedLinks[0];
       if (http) {
-        const attempt = await attemptOneClickUnsubscribe(http);
+        // Standards-based "one-click" unsubscribe: POST body "List-Unsubscribe=One-Click"
+        if (isListUnsubscribeOneClick(links.listUnsubscribePost) && links.httpLinks[0] === http) {
+          const attempt = await attemptListUnsubscribeOneClick({ url: http });
+          await prisma.emailAction.create({
+            data: {
+              emailMessageId: e.id,
+              type: "UNSUBSCRIBE_ATTEMPT",
+              status: attempt.ok ? "SUCCEEDED" : "FAILED",
+              details: {
+                method: "one_click_post",
+                url: http,
+                status: attempt.status,
+                listUnsubscribePost: links.listUnsubscribePost,
+              },
+            },
+          });
+          if (attempt.ok) {
+            await prisma.emailMessage.update({
+              where: { id: e.id },
+              data: { importStatus: "UNSUBSCRIBED" },
+            });
+            results.push({ id: e.id, ok: true, method: "one_click_post", url: http });
+            continue;
+          }
+          // If one-click POST fails, fall through to agent attempt.
+        }
+
+        const agent = await attemptUnsubscribeWithAgent({
+          url: http,
+          userEmail,
+        });
         await prisma.emailAction.create({
           data: {
             emailMessageId: e.id,
             type: "UNSUBSCRIBE_ATTEMPT",
-            status: attempt.ok ? "SUCCEEDED" : "FAILED",
-            details: { method: "http", url: http, status: attempt.status },
+            status: agent.ok ? "SUCCEEDED" : "FAILED",
+            details: {
+              method: "agent",
+              url: http,
+              finalUrl: agent.finalUrl,
+              steps: agent.steps,
+              error: agent.ok ? null : agent.error,
+            },
           },
         });
-        if (attempt.ok) {
+        if (agent.ok) {
           await prisma.emailMessage.update({
             where: { id: e.id },
             data: { importStatus: "UNSUBSCRIBED" },
           });
         }
+
         results.push({
           id: e.id,
-          ok: attempt.ok,
-          method: "http",
+          ok: agent.ok,
+          method: "agent",
           url: http,
-          error: attempt.ok ? undefined : "http_unsubscribe_failed",
+          steps: agent.steps,
+          error: agent.ok ? undefined : agent.error,
         });
         continue;
       }

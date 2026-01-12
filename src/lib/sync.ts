@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { classifyAndSummarizeEmail } from "@/lib/ai";
+import { extractUnsubscribeLinks } from "@/lib/unsubscribe";
 import {
   archiveMessage,
   fetchFullMessage,
@@ -84,6 +85,12 @@ export async function syncUserInboxes(userId: string, opts?: { maxPerInbox?: num
 
       const categoryId = ai.categoryId ?? ensuredCategories[0]!.id;
 
+      const extractedUnsubscribeLinks = extractUnsubscribeLinks({
+        listUnsubscribe: fetched.listUnsubscribe,
+        bodyText: fetched.bodyText,
+        bodyHtml: fetched.bodyHtml,
+      });
+
       await prisma.emailMessage.create({
         data: {
           userId,
@@ -100,6 +107,10 @@ export async function syncUserInboxes(userId: string, opts?: { maxPerInbox?: num
           bodyHtml: fetched.bodyHtml,
           summary: ai.summary,
           listUnsubscribe: fetched.listUnsubscribe,
+          unsubscribeLinks: {
+            ...extractedUnsubscribeLinks,
+            listUnsubscribePost: fetched.listUnsubscribePost ?? null,
+          },
         },
       });
 

@@ -77,6 +77,7 @@ export type GmailFetchedMessage = {
   fromName?: string;
   fromEmail?: string;
   listUnsubscribe?: string;
+  listUnsubscribePost?: string;
   bodyText?: string;
   bodyHtml?: string;
 };
@@ -96,6 +97,7 @@ export async function fetchFullMessage(
   const subject = findHeader(headers, "Subject") ?? undefined;
   const fromHeader = findHeader(headers, "From") ?? undefined;
   const listUnsubscribe = findHeader(headers, "List-Unsubscribe") ?? undefined;
+  const listUnsubscribePost = findHeader(headers, "List-Unsubscribe-Post") ?? undefined;
   const { fromName, fromEmail } = parseFromHeader(fromHeader);
 
   const { text, html } = walkPartsForBodies(msg.payload as any, {});
@@ -109,6 +111,7 @@ export async function fetchFullMessage(
     fromName,
     fromEmail,
     listUnsubscribe,
+    listUnsubscribePost,
     bodyText: text,
     bodyHtml: html,
   };
