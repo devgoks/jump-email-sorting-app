@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { syncUserInboxes } from "@/lib/sync";
+import { CategoryCards } from "@/components/category-cards";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -132,28 +133,13 @@ export default async function DashboardPage() {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-              {categories.length === 0 ? (
-                <div className="text-sm text-zinc-600">
-                  No categories yet. Create your first one below.
-                </div>
-              ) : (
-                categories.map((c) => (
-                  <Link
-                    key={c.id}
-                    href={`/dashboard/categories/${c.id}`}
-                    className="rounded-xl border border-zinc-200 bg-white p-4 hover:bg-zinc-50"
-                  >
-                    <div className="text-sm font-semibold text-zinc-900">
-                      {c.name}
-                    </div>
-                    <div className="mt-1 line-clamp-2 text-xs leading-5 text-zinc-600">
-                      {c.description}
-                    </div>
-                  </Link>
-                ))
-              )}
-            </div>
+            <CategoryCards
+              categories={categories.map((c) => ({
+                id: c.id,
+                name: c.name,
+                description: c.description,
+              }))}
+            />
 
             <div className="mt-8 border-t border-zinc-200 pt-6">
               <h3 className="text-base font-semibold text-zinc-950">

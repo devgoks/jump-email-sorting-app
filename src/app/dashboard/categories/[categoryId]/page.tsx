@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { CategoryEmailList } from "@/components/category-email-list";
+import { MarkCategorySeen } from "@/components/mark-category-seen";
 
 export default async function CategoryDetailPage({
   params,
@@ -40,6 +41,7 @@ export default async function CategoryDetailPage({
   return (
     <div className="min-h-screen bg-zinc-50">
       <div className="mx-auto max-w-5xl px-6 py-10">
+        <MarkCategorySeen categoryId={categoryId} />
         <header className="flex items-start justify-between gap-6">
           <div>
             <Link
