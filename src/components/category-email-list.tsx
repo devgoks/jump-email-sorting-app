@@ -21,6 +21,15 @@ export function CategoryEmailList({
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [isPending, startTransition] = useTransition();
   const [lastResult, setLastResult] = useState<string | null>(null);
+  const [activeAction, setActiveAction] = useState<null | "unsubscribe" | "trash">(
+    null
+  );
+
+  const itemById = useMemo(() => {
+    const m = new Map<string, CategoryEmailListItem>();
+    for (const it of items) m.set(it.id, it);
+    return m;
+  }, [items]);
 
   const selectedIds = useMemo(
     () => Object.entries(selected).filter(([, v]) => v).map(([k]) => k),
@@ -52,6 +61,7 @@ export function CategoryEmailList({
   }
 
   function bulkTrash() {
+    setActiveAction("trash");
     startTransition(async () => {
       try {
         const json = await post("/api/emails/bulk-trash");
@@ -60,18 +70,58 @@ export function CategoryEmailList({
         window.location.reload();
       } catch (e) {
         setLastResult(`Trash failed: ${String(e)}`);
+      } finally {
+        setActiveAction(null);
       }
     });
   }
 
   function bulkUnsubscribe() {
+    setLastResult(null);
+    setActiveAction("unsubscribe");
     startTransition(async () => {
       try {
         const json = await post("/api/emails/bulk-unsubscribe");
-        setLastResult(`Unsubscribe done: ${JSON.stringify(json.results)}`);
+        // Full results are useful for debugging; keep UI concise.
+        // eslint-disable-next-line no-console
+        console.log("bulk-unsubscribe response:", json);
+
+        const results: Array<{ id: string; ok: boolean }> = Array.isArray(
+          json?.results
+        )
+          ? json.results
+          : [];
+
+        const okIds = results.filter((r) => r?.ok === true).map((r) => r.id);
+        const failedIds = results.filter((r) => r?.ok === false).map((r) => r.id);
+        const success = okIds.length;
+        const failed = failedIds.length;
+
+        const okSubjects = okIds.map(
+          (id) => itemById.get(id)?.subject ?? "(no subject)"
+        );
+        const failedSubjects = failedIds.map(
+          (id) => itemById.get(id)?.subject ?? "(no subject)"
+        );
+
+        setLastResult(
+          [
+            `Unsubscribe Mail Processing Done — successful: ${success}, failed: ${failed}`,
+            "",
+            "Successful Unsubscribed Emails (subjects):",
+            okSubjects.length ? okSubjects.map((s) => `- ${s}`).join("\n") : "- (none)",
+            "",
+            "Failed Unsubscribed Emails (subjects):",
+            failedSubjects.length
+              ? failedSubjects.map((s) => `- ${s}`).join("\n")
+              : "- (none)",
+          ].join("\n")
+        );
         setSelected({});
       } catch (e) {
         setLastResult(`Unsubscribe failed: ${String(e)}`);
+      } finally {
+        setActiveAction(null);
       }
     });
   }
@@ -126,6 +176,35 @@ export function CategoryEmailList({
           </button>
         </div>
       </div>
+
+      {isPending && activeAction === "unsubscribe" ? (
+        <div className="mt-3 flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900">
+          <svg
+            className="h-4 w-4 animate-spin text-blue-700"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+            />
+          </svg>
+          <div className="font-medium">Unsubscribe is processing…</div>
+          <div className="text-xs text-blue-800/80">
+            Please keep this tab open.
+          </div>
+        </div>
+      ) : null}
 
       {lastResult ? (
         <pre className="mt-3 max-h-40 overflow-auto rounded-md bg-zinc-900 p-3 text-xs text-zinc-100">

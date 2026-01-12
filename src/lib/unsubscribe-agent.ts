@@ -138,9 +138,6 @@ async function suggestActionsWithAI(input: {
   const openai = getOpenAIIfConfigured();
   if (!openai) return null;
 
-  console.log("input.pageText", input.pageText);
-  console.log("input.controls", input.controls);
-
   const controlsText =
     input.controls
       .map((c) => {
