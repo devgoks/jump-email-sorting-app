@@ -26,7 +26,9 @@ export function extractUnsubscribeLinks(input: {
       httpLinks.push(v);
   }
 
-  const text = `${input.bodyText ?? ""}\n${stripHtml(input.bodyHtml ?? "")}`;
+  const bodyHtml = input.bodyHtml ?? "";
+  const htmlNoScripts = stripScriptsAndStyles(bodyHtml);
+  const text = `${input.bodyText ?? ""}\n${stripHtml(bodyHtml)}\n${htmlNoScripts}`;
   // Heuristic: find any URL containing "unsubscribe" or "unsub"
   const urlMatches = [...text.matchAll(/https?:\/\/[^\s"'<>]+/g)].map((m) => m[0]);
   for (const u of urlMatches) {
@@ -46,7 +48,13 @@ function uniq(xs: string[]) {
 }
 
 function stripHtml(html: string) {
-  return html.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ");
+  return stripScriptsAndStyles(html).replace(/<[^>]+>/g, " ");
+}
+
+function stripScriptsAndStyles(html: string) {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ");
 }
 
 
