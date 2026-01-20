@@ -152,6 +152,7 @@ async function suggestActionsWithAI(input: {
         return `- ${bits.join(" | ")}`;
       })
       .join("\n") || "(none)";
+  console.log("controlsText", controlsText);
   const prompt = [
     "You are an unsubscribe agent operating a web page.",
     "Given the page text and the available UI controls, output JSON ONLY.",
@@ -174,6 +175,7 @@ async function suggestActionsWithAI(input: {
     '- {"type":"clickText","text":"Save preferences"}',
     '- {"type":"clickRole","role":"radio","name":"Never"}',
     '- {"type":"fill","targetId":"input:7","value":"..."}',
+    '- {"type":"fill","targetId":"textarea:0","value":"..."}',
     '- {"type":"select","targetId":"select:0","value":"Option label or value"}',
     '- {"type":"check","targetId":"checkbox:2"}',
     '- {"type":"uncheck","targetId":"checkbox:2"}',
@@ -183,6 +185,7 @@ async function suggestActionsWithAI(input: {
     "- Prefer direct unsubscribe/opt-out actions over 'manage preferences' when available.",
     "- Avoid actions unrelated to unsubscribing (password reset, account deletion, purchases, etc.).",
     "- Use the USER_EMAIL when the page asks for email.",
+    "- If the page requires a comment/feedback textarea to proceed, fill it with a short neutral message like 'Please unsubscribe me.' (don't invent personal details).",
     "- Use select ONLY with target kind=select. For radio groups, use clickRole(role=radio, name=...) or clickText(...).",
     "- Use check/uncheck ONLY with target kind=checkbox.",
     "- 1 to 10 actions max.",
@@ -200,6 +203,7 @@ async function suggestActionsWithAI(input: {
 
   const parsed = AgentPlanSchema.safeParse(json);
   if (!parsed.success) return null;
+  console.log("parsed.data.actions", JSON.stringify(parsed.data.actions, null, 2));
   return parsed.data.actions;
 }
 
